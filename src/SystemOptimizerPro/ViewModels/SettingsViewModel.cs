@@ -48,7 +48,7 @@ public partial class SettingsViewModel : BaseViewModel
     private string _statusMessage = string.Empty;
 
     [ObservableProperty]
-    private string _appVersion = "1.0.0";
+    private string _appVersion = "1.1.0";
 
     public SettingsViewModel(ISettingsService settingsService, StartupService startupService)
     {

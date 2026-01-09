@@ -1,5 +1,12 @@
 # System Optimizer Pro
-Inspired by Intelligent Standby List Cleaner (ISLC)
+Inspired by [Intelligent Standby List Cleaner (ISLC)](https://www.wagnardsoft.com/forums/viewtopic.php?t=1256)
+
+
+
+**Created by ZxPwd**  
+Discord: `zxpwd`
+
+---
 
 ![System Optimizer Pro](src/SystemOptimizerPro/SystemOptimizerPro_dzXeYrZCd0.gif)
 

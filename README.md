@@ -1,4 +1,5 @@
 # System Optimizer Pro
+Inspired by Intelligent Standby List Cleaner (ISLC)
 
 ![System Optimizer Pro](src/SystemOptimizerPro/SystemOptimizerPro_dzXeYrZCd0.gif)
 

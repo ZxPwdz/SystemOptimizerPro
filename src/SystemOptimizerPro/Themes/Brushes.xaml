@@ -1,0 +1,53 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="Colors.xaml"/>
+    </ResourceDictionary.MergedDictionaries>
+
+    <!-- Background Brushes -->
+    <SolidColorBrush x:Key="BackgroundPrimaryBrush" Color="{StaticResource BackgroundPrimary}"/>
+    <SolidColorBrush x:Key="BackgroundSecondaryBrush" Color="{StaticResource BackgroundSecondary}"/>
+    <SolidColorBrush x:Key="BackgroundTertiaryBrush" Color="{StaticResource BackgroundTertiary}"/>
+    <SolidColorBrush x:Key="SidebarBackgroundBrush" Color="{StaticResource SidebarBackground}"/>
+
+    <!-- Card Brushes -->
+    <SolidColorBrush x:Key="CardBackgroundBrush" Color="{StaticResource CardBackground}"/>
+    <SolidColorBrush x:Key="CardBorderBrush" Color="{StaticResource CardBorder}"/>
+
+    <!-- Text Brushes -->
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimary}"/>
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondary}"/>
+    <SolidColorBrush x:Key="TextTertiaryBrush" Color="{StaticResource TextTertiary}"/>
+    <SolidColorBrush x:Key="TextOnAccentBrush" Color="{StaticResource TextOnAccent}"/>
+
+    <!-- Accent Brushes -->
+    <SolidColorBrush x:Key="AccentPrimaryBrush" Color="{StaticResource AccentPrimary}"/>
+    <SolidColorBrush x:Key="AccentPrimaryHoverBrush" Color="{StaticResource AccentPrimaryHover}"/>
+    <SolidColorBrush x:Key="AccentSecondaryBrush" Color="{StaticResource AccentSecondary}"/>
+    <SolidColorBrush x:Key="AccentWarningBrush" Color="{StaticResource AccentWarning}"/>
+    <SolidColorBrush x:Key="AccentDangerBrush" Color="{StaticResource AccentDanger}"/>
+    <SolidColorBrush x:Key="AccentPurpleBrush" Color="{StaticResource AccentPurple}"/>
+
+    <!-- Status Brushes -->
+    <SolidColorBrush x:Key="StatusHealthyBrush" Color="{StaticResource StatusHealthy}"/>
+    <SolidColorBrush x:Key="StatusWarningBrush" Color="{StaticResource StatusWarning}"/>
+    <SolidColorBrush x:Key="StatusCriticalBrush" Color="{StaticResource StatusCritical}"/>
+
+    <!-- Border Brushes -->
+    <SolidColorBrush x:Key="BorderLightBrush" Color="{StaticResource BorderLight}"/>
+    <SolidColorBrush x:Key="BorderMediumBrush" Color="{StaticResource BorderMedium}"/>
+    <SolidColorBrush x:Key="BorderFocusBrush" Color="{StaticResource BorderFocus}"/>
+
+    <!-- Gradient Brushes -->
+    <LinearGradientBrush x:Key="AccentGradientBrush" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#1A73E8" Offset="0"/>
+        <GradientStop Color="#A142F4" Offset="1"/>
+    </LinearGradientBrush>
+
+    <LinearGradientBrush x:Key="CardShadowBrush" StartPoint="0,0" EndPoint="0,1">
+        <GradientStop Color="#08000000" Offset="0"/>
+        <GradientStop Color="#00000000" Offset="1"/>
+    </LinearGradientBrush>
+
+</ResourceDictionary>

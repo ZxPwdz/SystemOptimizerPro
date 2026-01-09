@@ -1,0 +1,196 @@
+<UserControl x:Class="SystemOptimizerPro.Views.MemoryCleanerView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:controls="clr-namespace:SystemOptimizerPro.Controls"
+             mc:Ignorable="d"
+             d:DesignHeight="600" d:DesignWidth="800">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled"
+                  Padding="24">
+        <StackPanel>
+            <!-- Header -->
+            <TextBlock Text="Memory Cleaner"
+                       Style="{StaticResource HeadingStyle}"
+                       Margin="0,0,0,24"/>
+
+            <!-- Memory Overview -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,24">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Current Memory Status"
+                                   Style="{StaticResource SubheadingStyle}"
+                                   Margin="0,0,0,16"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,0,16">
+                                <TextBlock Text="Total Memory" Style="{StaticResource CaptionStyle}"/>
+                                <TextBlock Text="{Binding TotalMemoryGB, StringFormat={}{0:F1} GB}"
+                                           Style="{StaticResource SubheadingStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Grid.Row="0" Margin="0,0,0,16">
+                                <TextBlock Text="In Use" Style="{StaticResource CaptionStyle}"/>
+                                <TextBlock Text="{Binding UsedMemoryGB, StringFormat={}{0:F1} GB}"
+                                           Style="{StaticResource SubheadingStyle}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="0" Grid.Row="1">
+                                <TextBlock Text="Standby List" Style="{StaticResource CaptionStyle}"/>
+                                <TextBlock Style="{StaticResource SubheadingStyle}"
+                                           Foreground="{StaticResource AccentWarningBrush}">
+                                    <Run Text="{Binding StandbyMemoryGB, StringFormat={}{0:F1}}"/>
+                                    <Run Text=" GB"/>
+                                </TextBlock>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Grid.Row="1">
+                                <TextBlock Text="Free Memory" Style="{StaticResource CaptionStyle}"/>
+                                <TextBlock Style="{StaticResource SubheadingStyle}"
+                                           Foreground="{StaticResource AccentSecondaryBrush}">
+                                    <Run Text="{Binding FreeMemoryGB, StringFormat={}{0:F1}}"/>
+                                    <Run Text=" GB"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                    <controls:CircularProgressBar
+                        Grid.Column="1"
+                        Value="{Binding UsagePercent}"
+                        ProgressColor="{Binding UsageColor}"
+                        Width="120" Height="120"
+                        Margin="24,0,0,0"/>
+                </Grid>
+            </Border>
+
+            <!-- Manual Purge -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,24">
+                <StackPanel>
+                    <TextBlock Text="Manual Purge"
+                               Style="{StaticResource SubheadingStyle}"
+                               Margin="0,0,0,16"/>
+
+                    <TextBlock Text="Clear the Windows standby list to free up cached memory. This is useful when applications need more RAM."
+                               Style="{StaticResource BodyStyle}"
+                               TextWrapping="Wrap"
+                               Margin="0,0,0,16"/>
+
+                    <StackPanel Orientation="Horizontal">
+                        <Button Style="{StaticResource PrimaryActionButton}"
+                                Command="{Binding PurgeStandbyListCommand}"
+                                IsEnabled="{Binding IsPurging, Converter={StaticResource InverseBoolConverter}}"
+                                Margin="0,0,16,0">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="16" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="Purge Standby List" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Style="{StaticResource SecondaryButton}"
+                                Command="{Binding EmptyWorkingSetsCommand}"
+                                IsEnabled="{Binding IsPurging, Converter={StaticResource InverseBoolConverter}}">
+                            <TextBlock Text="Empty Working Sets"/>
+                        </Button>
+                    </StackPanel>
+
+                    <TextBlock Text="{Binding StatusMessage}"
+                               Style="{StaticResource CaptionStyle}"
+                               Margin="0,12,0,0"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Auto Purge Settings -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,24">
+                <StackPanel>
+                    <Grid Margin="0,0,0,16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Automatic Purge"
+                                       Style="{StaticResource SubheadingStyle}"/>
+                            <TextBlock Text="Automatically purge standby list when thresholds are met"
+                                       Style="{StaticResource CaptionStyle}"/>
+                        </StackPanel>
+
+                        <CheckBox Grid.Column="1"
+                                  Style="{StaticResource ToggleSwitchStyle}"
+                                  IsChecked="{Binding AutoPurgeEnabled}"
+                                  VerticalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid IsEnabled="{Binding AutoPurgeEnabled}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Column="0" Grid.Row="0" Margin="0,0,12,16">
+                            <TextBlock Text="Standby Threshold (MB)" Style="{StaticResource CaptionStyle}" Margin="0,0,0,8"/>
+                            <TextBox Text="{Binding StandbyThresholdMB, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Grid.Row="0" Margin="12,0,0,16">
+                            <TextBlock Text="Free Memory Threshold (MB)" Style="{StaticResource CaptionStyle}" Margin="0,0,0,8"/>
+                            <TextBox Text="{Binding FreeMemoryThresholdMB, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="0" Grid.Row="1" Margin="0,0,12,0">
+                            <TextBlock Text="Polling Rate (ms)" Style="{StaticResource CaptionStyle}" Margin="0,0,0,8"/>
+                            <TextBox Text="{Binding PollingRateMs, UpdateSourceTrigger=PropertyChanged}"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Statistics -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel>
+                    <TextBlock Text="Statistics"
+                               Style="{StaticResource SubheadingStyle}"
+                               Margin="0,0,0,16"/>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="Purge Count (This Session)" Style="{StaticResource CaptionStyle}"/>
+                            <TextBlock Text="{Binding PurgeCount}" Style="{StaticResource SubheadingStyle}"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1">
+                            <TextBlock Text="Last Purge Result" Style="{StaticResource CaptionStyle}"/>
+                            <TextBlock Text="{Binding LastPurgeResult}" Style="{StaticResource BodyStyle}" TextWrapping="Wrap"/>
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -28,6 +28,7 @@ public partial class App : Application
         services.AddSingleton<DnsCacheService>();
         services.AddSingleton<RecentFilesService>();
         services.AddSingleton<StartupService>();
+        services.AddSingleton<ActionLogService>();
 
         // ViewModels
         services.AddSingleton<MainViewModel>();

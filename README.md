@@ -12,6 +12,21 @@ Discord: `zxpwd`
 
 A modern Windows system optimization and memory management application built with WPF and .NET 8.0.
 
+## Changelog
+
+### v1.1.0
+- **Registry Cleaner Fix** - Fixed the registry cleaner to actually remove issues when cleaning
+- **Dashboard Action Log** - Added action log section showing recent optimization actions with timestamps
+- **Persistent Action Log** - Action log now persists when switching between tabs
+- **System Health Colors** - Improved health indicator colors (green for good, orange for moderate, red for critical)
+- **Dangerous Process Highlighting** - Critical system processes are now highlighted in red in Process Manager
+- **Process Protection Tooltips** - Added warning tooltips for dangerous processes
+
+### v1.0.0
+- Initial release with memory management, system cleaning, and process management features
+
+---
+
 ## Features
 
 ### Memory Management

@@ -24,6 +24,7 @@ public partial class DashboardViewModel : BaseViewModel
     private readonly RecentFilesService _recentFilesService;
     private readonly IRegistryService _registryService;
     private readonly ISettingsService _settingsService;
+    private readonly ActionLogService _actionLogService;
     private readonly DispatcherTimer _updateTimer;
 
     private readonly ObservableCollection<ObservableValue> _ramHistory = new();
@@ -84,6 +85,8 @@ public partial class DashboardViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isClearing;
 
+    public ObservableCollection<ActionLogEntry> ActionLog => _actionLogService.ActionLog;
+
     public ISeries[] RamSeries { get; }
     public ISeries[] CpuSeries { get; }
 
@@ -94,7 +97,8 @@ public partial class DashboardViewModel : BaseViewModel
         DnsCacheService dnsCacheService,
         RecentFilesService recentFilesService,
         IRegistryService registryService,
-        ISettingsService settingsService)
+        ISettingsService settingsService,
+        ActionLogService actionLogService)
     {
         _memoryService = memoryService;
         _processService = processService;
@@ -103,6 +107,7 @@ public partial class DashboardViewModel : BaseViewModel
         _recentFilesService = recentFilesService;
         _registryService = registryService;
         _settingsService = settingsService;
+        _actionLogService = actionLogService;
 
         // Initialize chart series
         RamSeries = new ISeries[]
@@ -203,37 +208,69 @@ public partial class DashboardViewModel : BaseViewModel
 
             // Memory health
             var memInfo = await _memoryService.GetMemoryInfoAsync();
+            var memStatus = memInfo.UsagePercent < 60 ? HealthStatus.Good
+                          : memInfo.UsagePercent < 85 ? HealthStatus.Warning
+                          : HealthStatus.Critical;
             items.Add(new HealthItem
             {
                 Name = "Memory",
-                Value = memInfo.UsagePercent < 80 ? "Good" : "High Usage",
-                Status = memInfo.UsagePercent < 80 ? HealthStatus.Good : HealthStatus.Warning
+                Value = memStatus == HealthStatus.Good ? "Good" : memStatus == HealthStatus.Warning ? "Moderate" : "High",
+                NumericValue = (int)memInfo.UsagePercent,
+                Status = memStatus
             });
 
-            // DNS cache
+            // DNS cache - 0 is best (green), high is warning/red
             var dnsCount = await _dnsCacheService.GetCacheEntryCountAsync();
+            var dnsStatus = dnsCount == 0 ? HealthStatus.Good
+                          : dnsCount < 500 ? HealthStatus.Good
+                          : dnsCount < 2000 ? HealthStatus.Warning
+                          : HealthStatus.Critical;
             items.Add(new HealthItem
             {
                 Name = "DNS Cache",
                 Value = $"{dnsCount:N0} entries",
-                Status = dnsCount < 1000 ? HealthStatus.Good : HealthStatus.Warning
+                NumericValue = dnsCount,
+                Status = dnsStatus
             });
 
-            // Recent files
+            // Recent files - 0 is best (green), high is warning/red
             var recentInfo = await _recentFilesService.GetRecentFilesInfoAsync();
+            var recentStatus = recentInfo.TotalCount == 0 ? HealthStatus.Good
+                             : recentInfo.TotalCount < 50 ? HealthStatus.Good
+                             : recentInfo.TotalCount < 200 ? HealthStatus.Warning
+                             : HealthStatus.Critical;
             items.Add(new HealthItem
             {
                 Name = "Recent Files",
                 Value = $"{recentInfo.TotalCount} items",
-                Status = recentInfo.TotalCount < 200 ? HealthStatus.Good : HealthStatus.Warning
+                NumericValue = recentInfo.TotalCount,
+                Status = recentStatus
             });
 
-            // Registry - just show status based on last scan
+            // Registry - show last scan result or prompt to scan
+            var settings = _settingsService.GetSettings();
+            var regStatus = HealthStatus.Unknown;
+            var regValue = "Scan to check";
+            if (settings.LastRegistryClean.HasValue)
+            {
+                var diff = DateTime.Now - settings.LastRegistryClean.Value;
+                if (diff.TotalHours < 24)
+                {
+                    regStatus = HealthStatus.Good;
+                    regValue = "Clean";
+                }
+                else if (diff.TotalDays < 7)
+                {
+                    regStatus = HealthStatus.Warning;
+                    regValue = "Scan recommended";
+                }
+            }
             items.Add(new HealthItem
             {
                 Name = "Registry",
-                Value = "Scan to check",
-                Status = HealthStatus.Unknown
+                Value = regValue,
+                NumericValue = 0,
+                Status = regStatus
             });
 
             HealthItems = items;
@@ -268,6 +305,11 @@ public partial class DashboardViewModel : BaseViewModel
         };
     }
 
+    private void AddLogEntry(string action, string details, bool success)
+    {
+        _actionLogService.AddEntry(action, details, success);
+    }
+
     [RelayCommand]
     private async Task ClearStandbyAsync()
     {
@@ -276,8 +318,23 @@ public partial class DashboardViewModel : BaseViewModel
 
         try
         {
+            var beforeMem = await _memoryService.GetMemoryInfoAsync();
             await _standbyListService.PurgeNowAsync();
+            var afterMem = await _memoryService.GetMemoryInfoAsync();
+
+            var freedMB = (beforeMem.StandbyGB - afterMem.StandbyGB) * 1024;
+            AddLogEntry("Clear Standby", $"Freed {freedMB:F0} MB", true);
+
+            var settings = _settingsService.GetSettings();
+            settings.LastMemoryClean = DateTime.Now;
+            _settingsService.SaveSettings(settings);
+
             await UpdateDashboardAsync();
+            UpdateLastOptimizedTime();
+        }
+        catch (Exception ex)
+        {
+            AddLogEntry("Clear Standby", $"Failed: {ex.Message}", false);
         }
         finally
         {
@@ -293,8 +350,20 @@ public partial class DashboardViewModel : BaseViewModel
 
         try
         {
-            await _dnsCacheService.FlushDnsCacheAsync();
+            var beforeCount = await _dnsCacheService.GetCacheEntryCountAsync();
+            var result = await _dnsCacheService.FlushDnsCacheAsync();
+
+            AddLogEntry("Flush DNS", $"Cleared {beforeCount} entries", result.Success);
+
+            var settings = _settingsService.GetSettings();
+            settings.LastDnsFlush = DateTime.Now;
+            _settingsService.SaveSettings(settings);
+
             await UpdateHealthItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            AddLogEntry("Flush DNS", $"Failed: {ex.Message}", false);
         }
         finally
         {
@@ -310,8 +379,20 @@ public partial class DashboardViewModel : BaseViewModel
 
         try
         {
-            await _recentFilesService.ClearRecentFilesAsync();
+            var beforeInfo = await _recentFilesService.GetRecentFilesInfoAsync();
+            var result = await _recentFilesService.ClearRecentFilesAsync();
+
+            AddLogEntry("Clear Recent", $"Removed {beforeInfo.TotalCount} items", result.Success);
+
+            var settings = _settingsService.GetSettings();
+            settings.LastRecentFilesClear = DateTime.Now;
+            _settingsService.SaveSettings(settings);
+
             await UpdateHealthItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            AddLogEntry("Clear Recent", $"Failed: {ex.Message}", false);
         }
         finally
         {
@@ -331,9 +412,22 @@ public partial class DashboardViewModel : BaseViewModel
             if (issues.Count > 0)
             {
                 await _registryService.CreateBackupAsync();
-                await _registryService.CleanIssuesAsync(issues);
+                var result = await _registryService.CleanIssuesAsync(issues);
+                AddLogEntry("Clean Registry", $"Fixed {result.ItemsProcessed} issues", result.Success);
+
+                var settings = _settingsService.GetSettings();
+                settings.LastRegistryClean = DateTime.Now;
+                _settingsService.SaveSettings(settings);
+            }
+            else
+            {
+                AddLogEntry("Clean Registry", "No issues found", true);
             }
             await UpdateHealthItemsAsync();
+        }
+        catch (Exception ex)
+        {
+            AddLogEntry("Clean Registry", $"Failed: {ex.Message}", false);
         }
         finally
         {

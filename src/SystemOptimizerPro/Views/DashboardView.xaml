@@ -256,8 +256,12 @@
 
                                         <TextBlock Grid.Column="2"
                                                    Text="{Binding Value}"
-                                                   Style="{StaticResource CaptionStyle}"
-                                                   VerticalAlignment="Center"/>
+                                                   VerticalAlignment="Center"
+                                                   FontWeight="SemiBold">
+                                            <TextBlock.Foreground>
+                                                <SolidColorBrush Color="{Binding ValueColor}"/>
+                                            </TextBlock.Foreground>
+                                        </TextBlock>
                                     </Grid>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -272,6 +276,77 @@
                     </StackPanel>
                 </Border>
             </Grid>
+
+            <!-- Action Log Section -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,24,0,0">
+                <StackPanel>
+                    <TextBlock Text="Action Log"
+                               Style="{StaticResource SubheadingStyle}"
+                               Margin="0,0,0,16"/>
+
+                    <ItemsControl ItemsSource="{Binding ActionLog}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding StatusIcon}"
+                                               FontWeight="Bold"
+                                               Margin="0,0,8,0"
+                                               VerticalAlignment="Center">
+                                        <TextBlock.Foreground>
+                                            <SolidColorBrush Color="{Binding StatusColor}"/>
+                                        </TextBlock.Foreground>
+                                    </TextBlock>
+
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding TimeDisplay}"
+                                               Style="{StaticResource CaptionStyle}"
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding Action}"
+                                               Style="{StaticResource BodyStyle}"
+                                               FontWeight="SemiBold"
+                                               Margin="8,0"
+                                               VerticalAlignment="Center"/>
+
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding Details}"
+                                               Style="{StaticResource CaptionStyle}"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Empty state -->
+                    <TextBlock Text="No recent actions. Use Quick Actions above to optimize your system."
+                               Foreground="{StaticResource TextSecondaryBrush}"
+                               HorizontalAlignment="Center"
+                               Margin="0,8"
+                               FontSize="12">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ActionLog.Count}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

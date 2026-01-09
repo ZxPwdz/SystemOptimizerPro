@@ -328,29 +328,39 @@ public class RegistryCleanerService : IRegistryService
             {
                 try
                 {
-                    if (issue.Category == RegistryIssueCategory.MruList)
+                    bool success = false;
+
+                    switch (issue.Category)
                     {
-                        // Clear MRU entries
-                        string keyPath = issue.KeyPath.Replace("HKEY_CURRENT_USER\\", "");
-                        using var key = Registry.CurrentUser.OpenSubKey(keyPath, true);
-                        if (key != null)
-                        {
-                            foreach (var valueName in key.GetValueNames())
-                            {
-                                if (valueName != "MRUListEx")
-                                {
-                                    key.DeleteValue(valueName, false);
-                                }
-                            }
-                            cleaned++;
-                        }
+                        case RegistryIssueCategory.MruList:
+                            success = CleanMruList(issue);
+                            break;
+
+                        case RegistryIssueCategory.FileAssociation:
+                            success = CleanFileAssociation(issue);
+                            break;
+
+                        case RegistryIssueCategory.SharedDll:
+                            success = CleanSharedDll(issue);
+                            break;
+
+                        case RegistryIssueCategory.StartupEntry:
+                            success = CleanStartupEntry(issue);
+                            break;
+
+                        case RegistryIssueCategory.ObsoleteSoftware:
+                            success = CleanObsoleteSoftware(issue);
+                            break;
+
+                        default:
+                            success = CleanGenericEntry(issue);
+                            break;
                     }
-                    else if (!string.IsNullOrEmpty(issue.ValueName))
-                    {
-                        // Delete specific value - this requires more careful handling
-                        // For safety, we'll just count it as cleaned
+
+                    if (success)
                         cleaned++;
-                    }
+                    else
+                        failed++;
                 }
                 catch
                 {
@@ -364,11 +374,158 @@ public class RegistryCleanerService : IRegistryService
                 Operation = "Registry Clean",
                 ItemsProcessed = cleaned,
                 ItemsFailed = failed,
-                Message = $"Cleaned {cleaned} registry issues",
+                Message = $"Cleaned {cleaned} registry issues" + (failed > 0 ? $" ({failed} failed)" : ""),
                 Timestamp = DateTime.Now,
                 Duration = DateTime.Now - startTime
             };
         });
+    }
+
+    private bool CleanMruList(RegistryIssue issue)
+    {
+        try
+        {
+            string keyPath = issue.KeyPath
+                .Replace("HKEY_CURRENT_USER\\", "")
+                .Replace("HKEY_LOCAL_MACHINE\\", "");
+
+            using var key = Registry.CurrentUser.OpenSubKey(keyPath, true);
+            if (key != null)
+            {
+                var valueNames = key.GetValueNames().ToList();
+                foreach (var valueName in valueNames)
+                {
+                    if (valueName != "MRUListEx" && valueName != "MRUList")
+                    {
+                        key.DeleteValue(valueName, false);
+                    }
+                }
+                if (key.GetValueNames().Contains("MRUListEx"))
+                {
+                    key.SetValue("MRUListEx", new byte[] { 0xFF, 0xFF, 0xFF, 0xFF }, RegistryValueKind.Binary);
+                }
+                return true;
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    private bool CleanFileAssociation(RegistryIssue issue)
+    {
+        try
+        {
+            string keyPath = issue.KeyPath.Replace("HKEY_CLASSES_ROOT\\", "");
+            using var key = Registry.ClassesRoot.OpenSubKey(keyPath, true);
+            if (key != null)
+            {
+                key.SetValue("", "");
+                return true;
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    private bool CleanSharedDll(RegistryIssue issue)
+    {
+        try
+        {
+            using var key = Registry.LocalMachine.OpenSubKey(
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\SharedDLLs", true);
+            if (key != null && !string.IsNullOrEmpty(issue.ValueName))
+            {
+                key.DeleteValue(issue.ValueName, false);
+                return true;
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    private bool CleanStartupEntry(RegistryIssue issue)
+    {
+        try
+        {
+            RegistryKey? rootKey = null;
+            string keyPath = "";
+
+            if (issue.KeyPath.StartsWith("HKEY_CURRENT_USER\\"))
+            {
+                rootKey = Registry.CurrentUser;
+                keyPath = issue.KeyPath.Replace("HKEY_CURRENT_USER\\", "");
+            }
+            else if (issue.KeyPath.StartsWith("HKEY_LOCAL_MACHINE\\"))
+            {
+                rootKey = Registry.LocalMachine;
+                keyPath = issue.KeyPath.Replace("HKEY_LOCAL_MACHINE\\", "");
+            }
+
+            if (rootKey != null)
+            {
+                using var key = rootKey.OpenSubKey(keyPath, true);
+                if (key != null && !string.IsNullOrEmpty(issue.ValueName))
+                {
+                    key.DeleteValue(issue.ValueName, false);
+                    return true;
+                }
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    private bool CleanObsoleteSoftware(RegistryIssue issue)
+    {
+        try
+        {
+            string keyPath = issue.KeyPath.Replace("HKEY_LOCAL_MACHINE\\", "");
+            using var key = Registry.LocalMachine.OpenSubKey(keyPath, true);
+            if (key != null)
+            {
+                key.DeleteValue("InstallLocation", false);
+                return true;
+            }
+        }
+        catch { }
+        return false;
+    }
+
+    private bool CleanGenericEntry(RegistryIssue issue)
+    {
+        try
+        {
+            RegistryKey? rootKey = null;
+            string keyPath = "";
+
+            if (issue.KeyPath.StartsWith("HKEY_CURRENT_USER\\"))
+            {
+                rootKey = Registry.CurrentUser;
+                keyPath = issue.KeyPath.Replace("HKEY_CURRENT_USER\\", "");
+            }
+            else if (issue.KeyPath.StartsWith("HKEY_LOCAL_MACHINE\\"))
+            {
+                rootKey = Registry.LocalMachine;
+                keyPath = issue.KeyPath.Replace("HKEY_LOCAL_MACHINE\\", "");
+            }
+            else if (issue.KeyPath.StartsWith("HKEY_CLASSES_ROOT\\"))
+            {
+                rootKey = Registry.ClassesRoot;
+                keyPath = issue.KeyPath.Replace("HKEY_CLASSES_ROOT\\", "");
+            }
+
+            if (rootKey != null && !string.IsNullOrEmpty(issue.ValueName))
+            {
+                using var key = rootKey.OpenSubKey(keyPath, true);
+                if (key != null)
+                {
+                    key.DeleteValue(issue.ValueName, false);
+                    return true;
+                }
+            }
+        }
+        catch { }
+        return false;
     }
 
     public async Task<bool> RestoreBackupAsync(string backupPath)

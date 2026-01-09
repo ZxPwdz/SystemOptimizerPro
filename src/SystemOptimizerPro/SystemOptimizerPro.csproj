@@ -12,7 +12,7 @@
     <ApplicationIcon>Assets\Icons\app.ico</ApplicationIcon>
     <AssemblyName>SystemOptimizerPro</AssemblyName>
     <RootNamespace>SystemOptimizerPro</RootNamespace>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>ZxPwd</Authors>
     <Company>System Optimizer</Company>
     <Product>System Optimizer Pro</Product>
